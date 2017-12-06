@@ -71,7 +71,7 @@
 
 
         <TextView
-            android:id="@+id/ok"
+            android:id="@+id/okText"
             android:layout_marginTop="30dp"
             android:gravity="center"
             android:layout_width="match_parent"
@@ -79,7 +79,7 @@
             android:text="출근"
             android:textSize="30dp"
             android:textColor="#ff0000"
-            android:visibility="visible" />
+            android:visibility="invisible" />
 
 
     </LinearLayout>
@@ -91,27 +91,7 @@
         android:orientation="horizontal" >
 
 
-        <Button
-            android:onClick="onButtonClicked"
-            android:id="@+id/checkIn"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="#ffff00"
-            android:text="출근"
-            android:drawableTop="@drawable/checked"
-            android:padding="10dp"/>
 
-
-        <Button
-            android:id="@+id/checkOut"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="#ffe900"
-            android:text="퇴근"
-            android:drawableTop="@drawable/cancel"
-            android:padding="10dp"/>
 
         <Button
             android:id="@+id/check"

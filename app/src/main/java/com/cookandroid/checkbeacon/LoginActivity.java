@@ -52,11 +52,17 @@ public class LoginActivity extends AppCompatActivity {
                                 String userID = jsonResponse.getString("userID");
                                 String userPassword = jsonResponse.getString("userPassword");
                                 String userName = jsonResponse.getString("userName");
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+
+                                Intent intent = new Intent(LoginActivity.this, RecoBackgroundMonitoringService.class);
                                 intent.putExtra("userID", userID);
-                                intent.putExtra("userPassword", userPassword);
                                 intent.putExtra("userName", userName);
-                                LoginActivity.this.startActivity(intent);
+                                startService(intent);
+
+                                Intent intent2 = new Intent(LoginActivity.this, MainActivity.class);
+                                intent2.putExtra("userID", userID);
+                                intent2.putExtra("userPassword", userPassword);
+                                intent2.putExtra("userName", userName);
+                                LoginActivity.this.startActivity(intent2);
                             }
                             else {
                                 AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);

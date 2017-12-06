@@ -26,12 +26,18 @@ package com.cookandroid.checkbeacon;
 
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.Volley;
 import com.perples.recosdk.RECOBeacon;
 import com.perples.recosdk.RECOBeaconManager;
 import com.perples.recosdk.RECOBeaconRegion;
@@ -40,12 +46,15 @@ import com.perples.recosdk.RECOErrorCode;
 import com.perples.recosdk.RECOMonitoringListener;
 import com.perples.recosdk.RECOServiceConnectListener;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
-
 /**
  * RECOBackgroundMonitoringService is to monitor regions in the background.
  *
@@ -63,6 +72,8 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
 
     private RECOBeaconManager mRecoManager;
     private ArrayList<RECOBeaconRegion> mRegions;
+    private String s = "RECOBeaconRegionInside";
+    private String s2 = "RECOBeaconRegionOutside";
 
     @Override
     public void onCreate() {
@@ -182,6 +193,15 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     public void didDetermineStateForRegion(RECOBeaconRegionState state, RECOBeaconRegion region) {
         Log.i("BackMonitoringService", "didDetermineStateForRegion()");
         //Write the code when the state of the monitored region is changed
+        //this.popupNotification("변화있음 : " + state + " : " );
+        if (s.equals(state.toString())) {
+            this.popupNotification("출근 - " + "InTime : ");
+            MainActivity.checkState = 1;
+            this.onDestroy();
+        }
+        else if (s2.equals(state.toString())) {
+            this.popupNotification("비콘이 인식되지 않습니다.");
+        }
     }
 
     @Override
@@ -219,6 +239,7 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     public void didStartMonitoringForRegion(RECOBeaconRegion region) {
         Log.i("BackMonitoringService", "didStartMonitoringForRegion() - " + region.getUniqueIdentifier());
         //Write the code when starting monitoring the region is started successfully
+        //this.popupNotification("모니터링 성공 " + region.getUniqueIdentifier());
     }
 
     private void popupNotification(String msg) {
@@ -238,6 +259,8 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     @Override
     public IBinder onBind(Intent intent) {
         // This method is not used
+        //userID = intent.getStringExtra("userID");
+        //userName = intent.getStringExtra("userName");
         return null;
     }
 

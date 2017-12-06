@@ -23,8 +23,10 @@
  */
 package com.cookandroid.checkbeacon;
 
+import android.app.NotificationManager;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.ListView;
 
@@ -46,6 +48,8 @@ import java.util.Locale;
  * RECOMonitoringActivity 클래스는 foreground 상태에서 monitoring을 수행합니다.
  */
 public class RecoMonitoringActivity extends RecoActivity implements RECOMonitoringListener {
+
+    private int mNotificationID = 9999;
     private RecoMonitoringListAdapter mMonitoringListAdapter;
     private ListView mRegionListView;
 
@@ -140,9 +144,11 @@ public class RecoMonitoringActivity extends RecoActivity implements RECOMonitori
         //Get the region and found beacon list in the entered region
         Log.i("RecoMonitoringActivity", "didEnterRegion() region:" + recoRegion.getUniqueIdentifier());
 
-
         mMonitoringListAdapter.updateRegion(recoRegion, RECOBeaconRegionState.RECOBeaconRegionInside, beacons.size(), new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA).format(new Date()));
         mMonitoringListAdapter.notifyDataSetChanged();
+
+
+
         //Write the code when the device is enter the region
     }
 
@@ -160,12 +166,14 @@ public class RecoMonitoringActivity extends RecoActivity implements RECOMonitori
 
         mMonitoringListAdapter.updateRegion(recoRegion, RECOBeaconRegionState.RECOBeaconRegionOutside, 0, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA).format(new Date()));
         mMonitoringListAdapter.notifyDataSetChanged();
+
         //Write the code when the device is exit the region
     }
 
     @Override
     public void didStartMonitoringForRegion(RECOBeaconRegion recoRegion) {
         Log.i("RecoMonitoringActivity", "didStartMonitoringForRegion: " + recoRegion.getUniqueIdentifier());
+
         //Write the code when starting monitoring the region is started successfully
     }
 
@@ -224,5 +232,6 @@ public class RecoMonitoringActivity extends RecoActivity implements RECOMonitori
         //See the RECOErrorCode in the documents.
         return;
     }
+
 
 }

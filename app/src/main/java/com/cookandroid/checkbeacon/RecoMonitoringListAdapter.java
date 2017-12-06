@@ -122,7 +122,7 @@ public class RecoMonitoringListAdapter extends BaseAdapter {
             return convertView;
         }
 
-        viewHolder.recoRegionBeaconCount.setText("비콘인식: " + recoBeaconCount + "개/n" + "다시 출석버튼을 눌러주세요.");
+        viewHolder.recoRegionBeaconCount.setText("# 비콘 인식 가능 (현재 비콘 갯수) : " + recoBeaconCount + '\n' + "다시 시도하여주세요.");
 
         return convertView;
     }

@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,12 +20,27 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+    SimpleDateFormat s;
+    Date date1;
+
     public static final String RECO_UUID = "24DDF411-8CF1-440C-87CD-E368DAF9C93E";
+    public static int checkState = 0;
+
+    //public static int checkState = 0;
 
     /**
      * SCAN_RECO_ONLY:
@@ -74,10 +90,12 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
 
     private View mLayout;
+    View dialogView;
 
-    Button checkIn;
-    Button checkOut;
-    Button check;
+    String userID;
+    String userName;
+    Intent intent;
+    TextView okText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,15 +114,24 @@ public class MainActivity extends AppCompatActivity {
 
         dateText.setText(sFormat.format(now).toString());
 
+        String statementTime = "2017-11-24 12:00";
+
+        s = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        try {
+            date1 = s.parse(statementTime);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        okText = (TextView) findViewById(R.id.okText);
         TextView idText = (TextView) findViewById(R.id.idText);
         TextView nameText = (TextView) findViewById(R.id.nameText);
-        checkIn = (Button) findViewById(R.id.checkIn);
-        checkOut = (Button) findViewById(R.id.checkOut);
-        check = (Button) findViewById(R.id.check);
+        //Button check = (Button) findViewById(R.id.checkIn);
+        Button checkOFF = (Button) findViewById(R.id.check);
 
-        Intent intent = getIntent();
-        String userID = intent.getStringExtra("userID");
-        String userName = intent.getStringExtra("userName");
+        Intent intent2 = getIntent();
+        userID = intent2.getStringExtra("userID");
+        userName = intent2.getStringExtra("userName");
 
         idText.setText(userID);
         nameText.setText(userName);
@@ -139,6 +166,100 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("MainActivity", "The location permission (ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION) is already granted.");
             }
         }
+
+        //intent = new Intent(MainActivity.this, RecoBackgroundMonitoringService.class);
+        //intent.putExtra("userID", userID);
+        //intent.putExtra("userName", userName);
+        //startService(intent);
+
+        /*check.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Intent intent = new Intent(MainActivity.this, RecoMonitoringActivity.class);
+                //MainActivity.this.startActivity(intent);
+                //this.startService(new Intent(this, RecoMonitoringActivity.class));
+
+                intent = new Intent(MainActivity.this, RecoBackgroundMonitoringService.class);
+                intent.putExtra("userID", userID);
+                intent.putExtra("userName", userName);
+                startService(intent);
+            }
+        });*/
+
+        checkOFF.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Intent intent = new Intent(MainActivity.this, RecoMonitoringActivity.class);
+                //MainActivity.this.startActivity(intent);
+                //this.startService(new Intent(this, RecoMonitoringActivity.class));
+
+                intent = new Intent(MainActivity.this, RecoBackgroundMonitoringService.class);
+                stopService(intent);
+
+                String inTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA).format(new Date());
+                Date date2 = null;
+                try {
+                    date2 = s.parse(inTime);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+                String checkIn;
+
+                //checkIn : statementTime와 비교
+                //statement>=inTime : 출석, statement<inTime : 지각
+                if (date1.before(date2)) {
+                    checkIn = "지각";
+                } else {
+                    checkIn = "출석";
+                }
+                //dateText.setText(inTime);
+                //checkText.setText(checkIn);
+
+                Response.Listener<String> responseListener = new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            if (success) {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setMessage("출근등록에 성공했습니다.")
+                                        .setPositiveButton("확인", null)
+                                        .create()
+                                        .show();
+                            }
+                            else {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                builder.setMessage("출근등록에 실패했습니다.")
+                                        .setNegativeButton("다시 시도", null)
+                                        .create()
+                                        .show();
+                            }
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                DateRequest dateRequest = new DateRequest(inTime, userID, userName, checkIn, responseListener);
+                RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+                queue.add(dateRequest);
+            }
+        });
+
+        /*if (checkState == 1) {
+                    stopService(intent);
+                    AlertDialog.Builder dlg = new AlertDialog.Builder(MainActivity.this);
+                    dlg.setTitle("출근완료");
+                    String checkInTime = new SimpleDateFormat("HH:mm:ss", Locale.KOREA).format(new Date());
+                    dlg.setMessage(checkInTime);
+                    dlg.setIcon(R.mipmap.ic_launcher);
+                    dlg.setPositiveButton("확인", null);
+                    dlg.show();
+                    okText.setVisibility(View.VISIBLE);
+        }*/
+
     }
 
     @Override
@@ -172,8 +293,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-
     }
 
     @Override
@@ -181,23 +300,6 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    /**
-     * In order to use RECO SDK for Android API 23 (Marshmallow) or higher,
-     * the location permission (ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION) is required.
-     *
-     * This sample project requests "ACCESS_COARSE_LOCATION" permission only,
-     * but you may request "ACCESS_FINE_LOCATION" permission depending on your application.
-     *
-     * "ACCESS_COARSE_LOCATION" permission is recommended.
-     *
-     * 안드로이드 API 23 (마시멜로우)이상 버전부터, 정상적으로 RECO SDK를 사용하기 위해서는
-     * 위치 권한 (ACCESS_COARSE_LOCATION 혹은 ACCESS_FINE_LOCATION)을 요청해야 합니다.
-     *
-     * 본 샘플 프로젝트에서는 "ACCESS_COARSE_LOCATION"을 요청하지만, 필요에 따라 "ACCESS_FINE_LOCATION"을 요청할 수 있습니다.
-     *
-     * 당사에서는 ACCESS_COARSE_LOCATION 권한을 권장합니다.
-     *
-     */
     private void requestLocationPermission() {
         if(!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
@@ -214,18 +316,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    public void onButtonClicked(View v) {
-        Button btn = (Button)v;
-        if(btn.getId() == R.id.checkIn) {
-            final Intent intent = new Intent(this, RecoMonitoringActivity.class);
-            startActivity(intent);
-        } else if (btn.getId() == R.id.checkOut) {
-            final Intent intent = new Intent(this, RecoMonitoringActivity.class);
-            startActivity(intent);
-        } else {
-            final Intent intent = new Intent(this, RecoMonitoringActivity.class);
-            startActivity(intent);
-        }
-    }
+
 
 }
