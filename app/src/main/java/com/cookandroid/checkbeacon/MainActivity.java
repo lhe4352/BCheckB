@@ -186,6 +186,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });*/
 
+        if (checkState == 1) {
+            checkOFF.setVisibility(View.VISIBLE);
+        }
+
         checkOFF.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

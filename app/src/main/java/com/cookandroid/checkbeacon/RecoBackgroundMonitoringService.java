@@ -34,6 +34,7 @@ import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -75,10 +76,27 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     private String s = "RECOBeaconRegionInside";
     private String s2 = "RECOBeaconRegionOutside";
 
+    String userID;
+    String userName;
+    SimpleDateFormat simple;
+    Date date1;
+
     @Override
     public void onCreate() {
         Log.i("BackMonitoringService", "onCreate()");
         super.onCreate();
+
+        Date now = new Date();
+
+        String statementTime = "2017-11-24 12:00";
+
+        simple = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        try {
+            date1 = simple.parse(statementTime);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -197,6 +215,60 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
         if (s.equals(state.toString())) {
             this.popupNotification("출근 - " + "InTime : ");
             MainActivity.checkState = 1;
+
+            /*String inTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA).format(new Date());
+            Date date2 = null;
+            try {
+                date2 = simple.parse(inTime);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            String checkIn;
+
+            //checkIn : statementTime와 비교
+            //statement>=inTime : 출석, statement<inTime : 지각
+            if (date1.before(date2)) {
+                checkIn = "지각";
+            } else {
+                checkIn = "출석";
+            }
+            //dateText.setText(inTime);
+            //checkText.setText(checkIn);
+
+            Response.Listener<String> responseListener = new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        boolean success = jsonResponse.getBoolean("success");
+                        if (success) {
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
+                            builder.setMessage("출근등록에 성공했습니다.")
+                                    .setPositiveButton("확인", null)
+                                    .create()
+                                    .show();
+                        }
+                        else {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
+                            builder.setMessage("출근등록에 실패했습니다.")
+                                    .setNegativeButton("다시 시도", null)
+                                    .create()
+                                    .show();
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            DateRequest dateRequest = new DateRequest(inTime, userID, userName, checkIn, responseListener);
+            RequestQueue queue = Volley.newRequestQueue(RecoBackgroundMonitoringService.this);
+            queue.add(dateRequest);*/
+
+
+
             this.onDestroy();
         }
         else if (s2.equals(state.toString())) {
@@ -259,8 +331,8 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     @Override
     public IBinder onBind(Intent intent) {
         // This method is not used
-        //userID = intent.getStringExtra("userID");
-        //userName = intent.getStringExtra("userName");
+        userID = intent.getStringExtra("userID");
+        userName = intent.getStringExtra("userName");
         return null;
     }
 
