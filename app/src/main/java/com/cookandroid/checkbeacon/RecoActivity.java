@@ -49,6 +49,7 @@ public abstract class RecoActivity extends Activity implements RECOServiceConnec
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        
         /**
          * Create an instance of RECOBeaconManager (to set scanning target and ranging timeout in the background.)
          * If you want to scan RECOs only and not to set ranging timeout in the backgournd, create an instance:
