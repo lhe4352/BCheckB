@@ -1,13 +1,16 @@
 package com.cookandroid.checkbeacon;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.ActivityManager;
+import android.app.*;
+import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -23,6 +26,9 @@ import android.widget.ToggleButton;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,10 +50,10 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * SCAN_RECO_ONLY:
-     *
+     * <p/>
      * If true, the application scans RECO beacons only, otherwise it scans all beacons.
      * It will be used when the instance of RECOBeaconManager is created.
-     *
+     * <p/>
      * true일 경우 레코 비콘만 스캔하며, false일 경우 모든 비콘을 스캔합니다.
      * RECOBeaconManager 객체 생성 시 사용합니다.
      */
@@ -55,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * ENABLE_BACKGROUND_RANGING_TIMEOUT:
-     *
+     * <p/>
      * If true, the application stops to range beacons in the entered region automatically in 10 seconds (background),
      * otherwise it continues to range beacons. (It affects the battery consumption.)
      * It will be used when the instance of RECOBeaconManager is created.
-     *
+     * <p/>
      * 백그라운드 ranging timeout을 설정합니다.
      * true일 경우, 백그라운드에서 입장한 region에서 ranging이 실행 되었을 때, 10초 후 자동으로 정지합니다.
      * false일 경우, 계속 ranging을 실행합니다. (배터리 소모율에 영향을 끼칩니다.)
@@ -69,13 +75,13 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * DISCONTINUOUS_SCAN:
-     *
+     * <p/>
      * There is a known android bug that some android devices scan BLE devices only once.
      * (link: http://code.google.com/p/android/issues/detail?id=65863)
      * To resolve the bug in our SDK, you can use setDiscontinuousScan() method of the RECOBeaconManager.
      * This method is to set whether the device scans BLE devices continuously or discontinuously.
      * The default is set as FALSE. Please set TRUE only for specific devices.
-     *
+     * <p/>
      * 일부 안드로이드 기기에서 BLE 장치들을 스캔할 때, 한 번만 스캔 후 스캔하지 않는 버그(참고: http://code.google.com/p/android/issues/detail?id=65863)가 있습니다.
      * 해당 버그를 SDK에서 해결하기 위해, RECOBeaconManager에 setDiscontinuousScan() 메소드를 이용할 수 있습니다.
      * 해당 메소드는 기기에서 BLE 장치들을 스캔할 때(즉, ranging 시에), 연속적으로 계속 스캔할 것인지, 불연속적으로 스캔할 것인지 설정하는 것입니다.
@@ -95,7 +101,14 @@ public class MainActivity extends AppCompatActivity {
     String userID;
     String userName;
     Intent intent;
+    Intent stopIntent;
     TextView okText;
+    BroadcastReceiver mReceiver;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = mBluetoothManager.getAdapter();
 
-        if(mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBTIntent, REQUEST_ENABLE_BT);
         }
@@ -158,8 +171,8 @@ public class MainActivity extends AppCompatActivity {
          * http://www.google.com/design/spec/patterns/permissions.html
          * https://github.com/googlesamples/android-RuntimePermissions
          */
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if(ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 Log.i("MainActivity", "The location permission (ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION) is not granted.");
                 this.requestLocationPermission();
             } else {
@@ -186,39 +199,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });*/
 
-        if (checkState == 1) {
-            checkOFF.setVisibility(View.VISIBLE);
-        }
 
-        checkOFF.setOnClickListener(new View.OnClickListener() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("com.cookandroid.checkbeacon.SEND_BROAD_CAST");
+
+        mReceiver = new BroadcastReceiver() {
             @Override
-            public void onClick(View view) {
-                //Intent intent = new Intent(MainActivity.this, RecoMonitoringActivity.class);
-                //MainActivity.this.startActivity(intent);
-                //this.startService(new Intent(this, RecoMonitoringActivity.class));
+            public void onReceive(Context context, Intent intent) {
+                final String checkIn = intent.getStringExtra("checkIn");
+                String inTime = intent.getStringExtra("inTime");
 
-                intent = new Intent(MainActivity.this, RecoBackgroundMonitoringService.class);
-                stopService(intent);
-
-                String inTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA).format(new Date());
-                Date date2 = null;
-                try {
-                    date2 = s.parse(inTime);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-
-                String checkIn;
-
-                //checkIn : statementTime와 비교
-                //statement>=inTime : 출석, statement<inTime : 지각
-                if (date1.before(date2)) {
-                    checkIn = "지각";
-                } else {
-                    checkIn = "출석";
-                }
-                //dateText.setText(inTime);
-                //checkText.setText(checkIn);
+                stopIntent = new Intent(MainActivity.this, RecoBackgroundMonitoringService.class);
+                stopService(stopIntent);
 
                 Response.Listener<String> responseListener = new Response.Listener<String>() {
                     @Override
@@ -232,8 +224,9 @@ public class MainActivity extends AppCompatActivity {
                                         .setPositiveButton("확인", null)
                                         .create()
                                         .show();
-                            }
-                            else {
+                                okText.setText(checkIn);
+                                okText.setVisibility(View.VISIBLE);
+                            } else {
                                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                                 builder.setMessage("출근등록에 실패했습니다.")
                                         .setNegativeButton("다시 시도", null)
@@ -250,7 +243,19 @@ public class MainActivity extends AppCompatActivity {
                 RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
                 queue.add(dateRequest);
             }
-        });
+        };
+
+        registerReceiver(mReceiver, intentFilter);
+
+
+        /*checkOFF.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent listIntent = new Intent(MainActivity.this, ListActivity.class);
+                MainActivity.this.startActivity(listIntent);
+            }
+        });*/
+
 
         /*if (checkState == 1) {
                     stopService(intent);
@@ -264,7 +269,11 @@ public class MainActivity extends AppCompatActivity {
                     okText.setVisibility(View.VISIBLE);
         }*/
 
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -279,15 +288,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch(requestCode) {
-            case REQUEST_LOCATION : {
+        switch (requestCode) {
+            case REQUEST_LOCATION: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Snackbar.make(mLayout, R.string.location_permission_granted, Snackbar.LENGTH_LONG).show();
                 } else {
                     Snackbar.make(mLayout, R.string.location_permission_not_granted, Snackbar.LENGTH_LONG).show();
                 }
             }
-            default :
+            default:
                 break;
         }
 
@@ -305,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestLocationPermission() {
-        if(!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION);
             return;
         }
@@ -320,6 +329,43 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
 
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.cookandroid.checkbeacon/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(client, viewAction);
+    }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://com.cookandroid.checkbeacon/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(client, viewAction);
+        client.disconnect();
+    }
 }

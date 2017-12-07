@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class DateRequest extends StringRequest {
 
-    final static private String URL = "http://192.168.0.10/Timedata.php";
+    final static private String URL = "http://192.168.109.39/Timedata.php";
     private Map<String, String> parameters;
 
     public DateRequest(String inTime, String userID, String userName, String checkIn, Response.Listener<String> listener) {

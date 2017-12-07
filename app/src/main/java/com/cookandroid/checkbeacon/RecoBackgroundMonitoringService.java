@@ -30,6 +30,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
@@ -56,6 +57,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+
 /**
  * RECOBackgroundMonitoringService is to monitor regions in the background.
  *
@@ -80,6 +84,7 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
     String userName;
     SimpleDateFormat simple;
     Date date1;
+    String checkIn;
 
     @Override
     public void onCreate() {
@@ -88,7 +93,7 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
 
         Date now = new Date();
 
-        String statementTime = "2017-11-24 12:00";
+        String statementTime = "2017-12-07 11:00";
 
         simple = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         try {
@@ -216,7 +221,7 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
             this.popupNotification("출근 - " + "InTime : ");
             MainActivity.checkState = 1;
 
-            /*String inTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA).format(new Date());
+            String inTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA).format(new Date());
             Date date2 = null;
             try {
                 date2 = simple.parse(inTime);
@@ -224,34 +229,43 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
                 e.printStackTrace();
             }
 
-            String checkIn;
+
 
             //checkIn : statementTime와 비교
             //statement>=inTime : 출석, statement<inTime : 지각
             if (date1.before(date2)) {
                 checkIn = "지각";
             } else {
-                checkIn = "출석";
+                checkIn = "출근";
             }
+
+            Intent send = new Intent("com.cookandroid.checkbeacon.SEND_BROAD_CAST");
+            send.putExtra("checkIn", checkIn);
+            send.putExtra("inTime", inTime);
+            sendBroadcast(send);
+
+
             //dateText.setText(inTime);
             //checkText.setText(checkIn);
 
-            Response.Listener<String> responseListener = new Response.Listener<String>() {
+            /*Response.Listener<String> responseListener = new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
                     try {
                         JSONObject jsonResponse = new JSONObject(response);
                         boolean success = jsonResponse.getBoolean("success");
                         if (success) {
-
-                            AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
+                            popupNotification("안녕");
+                            //this.popupNotification("출근 - " + "InTime : ");
+                            /*AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
                             builder.setMessage("출근등록에 성공했습니다.")
                                     .setPositiveButton("확인", null)
                                     .create()
                                     .show();
                         }
                         else {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
+                            popupNotification("실패");
+                            /*AlertDialog.Builder builder = new AlertDialog.Builder(RecoBackgroundMonitoringService.this);
                             builder.setMessage("출근등록에 실패했습니다.")
                                     .setNegativeButton("다시 시도", null)
                                     .create()
@@ -264,9 +278,8 @@ public class RecoBackgroundMonitoringService extends Service implements RECOMoni
                 }
             };
             DateRequest dateRequest = new DateRequest(inTime, userID, userName, checkIn, responseListener);
-            RequestQueue queue = Volley.newRequestQueue(RecoBackgroundMonitoringService.this);
+            RequestQueue queue = Volley.newRequestQueue(this);
             queue.add(dateRequest);*/
-
 
 
             this.onDestroy();
